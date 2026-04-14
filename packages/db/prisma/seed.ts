@@ -1,7 +1,6 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
-import { PrismaClient, UserRole } from "../generated/client/client";
-
+import { PrismaClient, UserRole } from "@prisma/client";
 const prisma = new PrismaClient();
 
 function makeScan(
