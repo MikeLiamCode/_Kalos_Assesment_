@@ -1,0 +1,37 @@
+# dependencies
+node_modules/
+apps/*/node_modules/
+packages/*/node_modules/
+
+# Next / build
+.next/
+out/
+dist/
+coverage/
+
+# env
+.env
+.env.local
+.env.*.local
+apps/*/.env
+apps/*/.env.local
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# uploads
+apps/dashboard/public/uploads/
+
+# Prisma generated client
+packages/db/generated/
+
+# OS/editor
+.DS_Store
+.vscode/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
