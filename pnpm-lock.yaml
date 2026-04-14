@@ -82,6 +82,9 @@ importers:
       '@next/eslint-plugin-next':
         specifier: ^16.2.0
         version: 16.2.3
+      '@prisma/nextjs-monorepo-workaround-plugin':
+        specifier: ^7.7.0
+        version: 7.7.0
       '@tailwindcss/postcss':
         specifier: ^4.1.5
         version: 4.2.2
@@ -923,6 +926,9 @@ packages:
 
   '@prisma/get-platform@6.16.0':
     resolution: {integrity: sha512-eaJOOvAoGslSUTjiQrtE9E0hoBdfL43j8SymOGD6LbdrKRNtIoiy6qiBaEr2fNYD+R/Qns7QOwPhl7SVHJayKA==}
+
+  '@prisma/nextjs-monorepo-workaround-plugin@7.7.0':
+    resolution: {integrity: sha512-EWZ0wtla1i4xKG5k0L1tm9yAzxbbMjFO24QvSB6hLaP8v6Do5S26CjDqB5xWLl9mSGiDQJ4FvBddt+IpZf03Jg==}
 
   '@reduxjs/toolkit@2.11.2':
     resolution: {integrity: sha512-Kd6kAHTA6/nUpp8mySPqj3en3dm0tdMIgbttnQ1xFMVpufoj+ADi8pXLBsd4xzTRHQa7t/Jv8W5UnCuW4kuWMQ==}
@@ -3402,6 +3408,8 @@ snapshots:
   '@prisma/get-platform@6.16.0':
     dependencies:
       '@prisma/debug': 6.16.0
+
+  '@prisma/nextjs-monorepo-workaround-plugin@7.7.0': {}
 
   '@reduxjs/toolkit@2.11.2(react-redux@9.2.0(@types/react@19.2.14)(react@19.2.5)(redux@5.0.1))(react@19.2.5)':
     dependencies:
