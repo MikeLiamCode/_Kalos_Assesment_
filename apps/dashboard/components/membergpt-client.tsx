@@ -37,7 +37,7 @@ export function MemberGPTClient() {
       const apiBase =
         process.env.NEXT_PUBLIC_MEMBERGPT_API_URL || "http://127.0.0.1:8000";
 
-      const res = await fetch(`${apiBase}/chat`, {
+      const res = await fetch(`${apiBase}/chat/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
