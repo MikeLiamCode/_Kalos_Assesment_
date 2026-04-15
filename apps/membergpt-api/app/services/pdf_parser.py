@@ -76,7 +76,7 @@ def _extract_with_regex(text: str):
 
 def _extract_with_gemini(text: str):
     gemini_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_key:
+    if not gemini_key or not text.strip():
         return {}
 
     prompt = f"""
@@ -89,6 +89,11 @@ Extract these DEXA values from the text and return ONLY valid JSON:
   "leanMassKg": number or null,
   "scanDate": "YYYY-MM-DD" or null
 }}
+
+Rules:
+- Return only JSON
+- If a field is missing, return null
+- Do not explain anything
 
 DEXA TEXT:
 {text}
