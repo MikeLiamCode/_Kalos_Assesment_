@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       data: {
         memberId,
         fileName: file.name,
-        fileUrl: null,
+        fileUrl: "",
         parseStatus: "PENDING",
       },
     });
