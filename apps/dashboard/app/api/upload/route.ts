@@ -41,7 +41,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const apiRes = await fetch(`${apiBase}/parse/parse`, {
+    const normalizedApiBase = apiBase.replace(/\/+$/, "");
+
+    const apiRes = await fetch(`${normalizedApiBase}/parse/parse`, {
       method: "POST",
       body: forwardForm,
     });
