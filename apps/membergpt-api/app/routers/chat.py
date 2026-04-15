@@ -12,9 +12,12 @@ router = APIRouter()
 def chat(payload: ChatRequest, db: Session = Depends(get_db)):
     raw_answer = answer_from_sql(db, payload.question)
 
-    final_answer = format_with_gemini(payload.question, raw_answer)
+    try:
+        final_answer = format_with_gemini(payload.question, raw_answer)
+    except Exception:
+        final_answer = raw_answer
 
     return {
         "answer": final_answer,
-        "raw": raw_answer  # optional (good for debugging/demo)
+        "raw": raw_answer,
     }
