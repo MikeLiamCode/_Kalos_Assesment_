@@ -1,34 +1,9 @@
 import io
-import re
-from datetime import datetime
 import pdfplumber
-
-
-def _extract_number(patterns: list[str], text: str, field_name: str) -> float:
-    for pattern in patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            return float(match.group(1))
-    raise ValueError(f"Could not extract {field_name} from PDF text")
-
-
-def _extract_date(text: str) -> datetime:
-    date_patterns = [
-        r"(?:Scan\s*Date|Exam\s*Date|Study\s*Date|Date)\s*[:\-]?\s*(\d{1,2}/\d{1,2}/\d{2,4})",
-        r"(\d{4}-\d{2}-\d{2})",
-    ]
-
-    for pattern in date_patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            raw = match.group(1).strip()
-            for fmt in ("%m/%d/%Y", "%m/%d/%y", "%Y-%m-%d"):
-                try:
-                    return datetime.strptime(raw, fmt)
-                except ValueError:
-                    pass
-
-    return datetime.utcnow()
+import requests
+import os
+import json
+from datetime import datetime
 
 
 def parse_dexa_pdf_from_bytes(file_bytes: bytes):
@@ -38,50 +13,66 @@ def parse_dexa_pdf_from_bytes(file_bytes: bytes):
         for page in pdf.pages:
             text += (page.extract_text() or "") + "\n"
 
-    # Adjust these patterns if your PDF labels differ slightly
-    weight_kg = _extract_number(
-        [
-            r"Weight\s*(?:\(kg\)|kg)?\s*[:\-]?\s*(\d+(?:\.\d+)?)",
-            r"Total\s*Mass\s*(?:\(kg\)|kg)?\s*[:\-]?\s*(\d+(?:\.\d+)?)",
-        ],
-        text,
-        "weightKg",
+    gemini_key = os.getenv("GEMINI_API_KEY")
+
+    prompt = f"""
+You are a medical data extractor.
+
+Extract the following fields from the DEXA scan text:
+
+- weightKg
+- bodyFatPercent
+- fatMassKg
+- leanMassKg
+- scanDate
+
+Return ONLY valid JSON like:
+{{
+  "weightKg": number,
+  "bodyFatPercent": number,
+  "fatMassKg": number,
+  "leanMassKg": number,
+  "scanDate": "YYYY-MM-DD"
+}}
+
+If a field is missing, estimate conservatively.
+
+DEXA TEXT:
+{text}
+"""
+
+    response = requests.post(
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={gemini_key}",
+        headers={"Content-Type": "application/json"},
+        json={
+            "contents": [
+                {
+                    "parts": [{"text": prompt}]
+                }
+            ]
+        },
+        timeout=20
     )
 
-    body_fat_percent = _extract_number(
-        [
-            r"Body\s*Fat\s*%?\s*[:\-]?\s*(\d+(?:\.\d+)?)",
-            r"Percent\s*Body\s*Fat\s*[:\-]?\s*(\d+(?:\.\d+)?)",
-        ],
-        text,
-        "bodyFatPercent",
-    )
+    data = response.json()
 
-    fat_mass_kg = _extract_number(
-        [
-            r"Fat\s*Mass\s*(?:\(kg\)|kg)?\s*[:\-]?\s*(\d+(?:\.\d+)?)",
-            r"Total\s*Fat\s*(?:\(kg\)|kg)?\s*[:\-]?\s*(\d+(?:\.\d+)?)",
-        ],
-        text,
-        "fatMassKg",
-    )
+    try:
+        raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
 
-    lean_mass_kg = _extract_number(
-        [
-            r"Lean\s*Mass\s*(?:\(kg\)|kg)?\s*[:\-]?\s*(\d+(?:\.\d+)?)",
-            r"Lean\s*Tissue\s*(?:\(kg\)|kg)?\s*[:\-]?\s*(\d+(?:\.\d+)?)",
-            r"Fat\s*Free\s*Mass\s*(?:\(kg\)|kg)?\s*[:\-]?\s*(\d+(?:\.\d+)?)",
-        ],
-        text,
-        "leanMassKg",
-    )
+        # extract JSON safely
+        start = raw_text.find("{")
+        end = raw_text.rfind("}") + 1
+        json_str = raw_text[start:end]
 
-    scan_date = _extract_date(text)
+        parsed = json.loads(json_str)
 
-    return {
-        "weightKg": weight_kg,
-        "bodyFatPercent": body_fat_percent,
-        "fatMassKg": fat_mass_kg,
-        "leanMassKg": lean_mass_kg,
-        "scanDate": scan_date,
-    }
+        return {
+            "weightKg": float(parsed["weightKg"]),
+            "bodyFatPercent": float(parsed["bodyFatPercent"]),
+            "fatMassKg": float(parsed["fatMassKg"]),
+            "leanMassKg": float(parsed["leanMassKg"]),
+            "scanDate": datetime.fromisoformat(parsed["scanDate"]),
+        }
+
+    except Exception as e:
+        raise Exception(f"Gemini parsing failed: {str(e)}")
